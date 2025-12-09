@@ -3,332 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Air App</title>
+    <title>Smart Environment STEM</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 
     <style>
-        body { 
-            background-color: #f2f4f8; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* KHUNG GIẢ LẬP ĐIỆN THOẠI */
+        body { background-color: #f0f4f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        
         .app-container {
-            max-width: 480px; /* Giới hạn chiều rộng */
-            margin: 0 auto;
-            min-height: 100vh;
-            background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            max-width: 480px; margin: 0 auto; min-height: 100vh;
+            background: white; box-shadow: 0 0 20px rgba(0,0,0,0.05);
             display: flex; flex-direction: column;
-            position: relative;
         }
 
         /* HEADER */
-        .app-header {
-            background: linear-gradient(135deg, #0061f2 0%, #00ba94 100%);
-            padding: 20px 20px 40px 20px; /* Padding dưới nhiều để vòng tròn đè lên */
-            color: white;
-            border-bottom-left-radius: 30px;
-            border-bottom-right-radius: 30px;
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 20px 20px 50px 20px; color: white;
+            border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
         }
 
-        /* CARD VÒNG TRÒN (Nổi lên trên Header) */
-        .gauge-card {
-            background: white;
-            margin: -35px 20px 20px 20px;
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            text-align: center;
+        /* CO2 GAUGE (Nổi bật) */
+        .main-card {
+            background: white; margin: -40px 20px 15px 20px;
+            border-radius: 20px; padding: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1); text-align: center;
         }
-
         .co2-circle {
-            width: 160px; height: 160px; border-radius: 50%;
+            width: 140px; height: 140px; border-radius: 50%;
             background: conic-gradient(#00ba94 0%, #eee 0%);
             margin: 0 auto 10px auto;
             display: flex; align-items: center; justify-content: center;
-            transition: background 0.5s ease;
         }
         .co2-inner {
-            width: 130px; height: 130px; background: white; border-radius: 50%;
+            width: 115px; height: 115px; background: white; border-radius: 50%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .val-text { font-size: 2.5rem; font-weight: 800; color: #333; line-height: 1; }
-        .unit-text { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* THANH CHUYỂN CHẾ ĐỘ (Segmented Control) */
+        /* CARDS NHIỆT ĐỘ & ĐỘ ẨM (2 cột) */
+        .sensor-row { display: flex; gap: 15px; padding: 0 20px 20px 20px; }
+        .sensor-card {
+            flex: 1; background: #f8f9fa; border-radius: 15px;
+            padding: 15px; text-align: center; border: 1px solid #eee;
+            transition: transform 0.2s;
+        }
+        .sensor-card:active { transform: scale(0.95); }
+        .sensor-icon { font-size: 1.5rem; margin-bottom: 5px; }
+        .sensor-val { font-size: 1.5rem; font-weight: 800; color: #333; }
+        .sensor-label { font-size: 0.8rem; color: #666; text-transform: uppercase; }
+
+        /* Nút chuyển chế độ */
         .mode-switch {
-            background: #f1f3f5;
-            border-radius: 12px;
-            padding: 4px;
-            margin: 0 20px 20px 20px;
-            display: flex;
+            background: #e9ecef; border-radius: 12px; padding: 4px;
+            margin: 0 20px 20px 20px; display: flex;
         }
         .mode-btn {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #666;
-            transition: all 0.2s;
+            flex: 1; border: none; background: transparent; padding: 10px;
+            border-radius: 10px; font-size: 13px; font-weight: 600; color: #666;
         }
-        .mode-btn.active {
-            background: white;
-            color: #0061f2;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        .mode-btn.active { background: white; color: #007bff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
-        /* PANEL ĐIỀU KHIỂN */
-        .control-panel { padding: 0 20px; display: none; animation: fadeIn 0.3s; }
-        .control-panel.show { display: block; }
+        /* Control Panels */
+        .panel { display: none; padding: 0 20px; animation: fadeUp 0.3s; }
+        .panel.show { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* NÚT BẤM LỚN */
+        /* Big Button */
         .btn-big {
-            width: 100%; padding: 18px;
-            border-radius: 15px; border: none;
-            font-size: 16px; font-weight: bold;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transition: transform 0.1s;
+            width: 100%; padding: 15px; border-radius: 12px; border: none;
+            font-weight: bold; font-size: 16px; margin-bottom: 10px;
+            color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .btn-big:active { transform: scale(0.98); }
-        
-        .btn-on { background: #ff4757; color: white; }
-        .btn-off { background: #2f3542; color: white; }
-        .btn-save { background: #0061f2; color: white; }
-
-        /* INPUT GIỜ */
-        .time-input {
-            background: #f8f9fa; border: 1px solid #e9ecef;
-            border-radius: 12px; padding: 15px;
-            font-size: 18px; font-weight: bold; text-align: center;
-        }
-
-        /* STATUS BADGE */
-        .status-dot {
-            width: 8px; height: 8px; border-radius: 50%; display: inline-block;
-            margin-right: 5px;
-        }
-        .bg-online { background-color: #00ff88; box-shadow: 0 0 10px #00ff88; }
-        .bg-offline { background-color: #ff4757; }
+        .btn-on { background: #ff4757; }
+        .btn-off { background: #2f3542; }
 
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    
-    <div class="app-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="mb-0 fw-bold">Smart Ventilation</h5>
-                <small style="opacity: 0.8">STEM Project</small>
-            </div>
-            <div class="bg-white bg-opacity-25 px-3 py-1 rounded-pill d-flex align-items-center" style="font-size: 12px;">
-                <div id="conn-dot" class="status-dot bg-offline"></div>
-                <span id="conn-text">Offline</span>
-            </div>
+    <div class="header">
+        <div class="d-flex justify-content-between">
+            <div><h5 class="fw-bold m-0">Environment Monitor</h5><small>STEM Lab Project</small></div>
+            <div class="badge bg-white text-dark bg-opacity-25"><i class="fas fa-wifi me-1"></i><span id="conn-text">Offline</span></div>
         </div>
     </div>
 
-    <div class="gauge-card">
-        <div class="co2-circle" id="co2-gauge">
+    <div class="main-card">
+        <div class="co2-circle" id="gauge-co2">
             <div class="co2-inner">
-                <span id="co2-val" class="val-text">--</span>
-                <span class="unit-text">PPM</span>
+                <span id="val-co2" style="font-size: 2rem; font-weight:800">--</span>
+                <span style="font-size: 0.7rem; color:#888">PPM CO2</span>
             </div>
         </div>
-        <div id="air-status" class="fw-bold text-success">Đang kết nối...</div>
-        <small class="text-muted" style="font-size: 11px;">ESP32: <span id="esp-status">Unknown</span></small>
+        <div id="status-co2" class="fw-bold text-success small">Đang kết nối...</div>
+    </div>
+
+    <div class="sensor-row">
+        <div class="sensor-card">
+            <div class="sensor-icon text-danger"><i class="fas fa-temperature-high"></i></div>
+            <div class="sensor-val"><span id="val-temp">--</span>°C</div>
+            <div class="sensor-label">Nhiệt độ</div>
+        </div>
+        <div class="sensor-card">
+            <div class="sensor-icon text-primary"><i class="fas fa-tint"></i></div>
+            <div class="sensor-val"><span id="val-hum">--</span>%</div>
+            <div class="sensor-label">Độ ẩm</div>
+        </div>
     </div>
 
     <div class="mode-switch">
-        <button class="mode-btn active" onclick="switchMode('AUTO', this)">Tự động</button>
-        <button class="mode-btn" onclick="switchMode('MANUAL', this)">Thủ công</button>
-        <button class="mode-btn" onclick="switchMode('TIMER', this)">Hẹn giờ</button>
+        <button class="mode-btn active" onclick="setMode('AUTO', this)">Tự động</button>
+        <button class="mode-btn" onclick="setMode('MANUAL', this)">Thủ công</button>
     </div>
 
-    <div class="flex-grow-1 pb-4">
-        
-        <div id="panel-AUTO" class="control-panel show text-center">
-            <div class="p-4 bg-light rounded-3">
-                <i class="fas fa-robot fa-3x text-primary mb-3"></i>
-                <p class="mb-0 text-muted">Hệ thống đang chạy tự động.</p>
-                <div class="mt-2 fw-bold text-primary">Ngưỡng: >1000 Bật | <800 Tắt</div>
-            </div>
+    <div id="p-AUTO" class="panel show text-center">
+        <div class="bg-white p-3 rounded-3 border">
+            <i class="fas fa-magic text-warning fa-2x mb-2"></i>
+            <p class="small text-muted mb-0">Quạt sẽ bật nếu:<br><b>CO2 > 1000 ppm</b> hoặc <b>Độ ẩm > 80%</b></p>
         </div>
-
-        <div id="panel-MANUAL" class="control-panel">
-            <button class="btn-big btn-on" onclick="controlFan('1')">
-                <i class="fas fa-wind me-2"></i> BẬT QUẠT NGAY
-            </button>
-            <button class="btn-big btn-off" onclick="controlFan('0')">
-                <i class="fas fa-stop me-2"></i> TẮT QUẠT
-            </button>
-            <p class="text-center text-muted small mt-2">Điều khiển thủ công qua Internet</p>
-        </div>
-
-        <div id="panel-TIMER" class="control-panel">
-            <div class="row g-3 mb-3">
-                <div class="col-6">
-                    <label class="small text-muted fw-bold mb-1">GIỜ BẬT</label>
-                    <input type="time" id="time-on" class="form-control time-input">
-                </div>
-                <div class="col-6">
-                    <label class="small text-muted fw-bold mb-1">GIỜ TẮT</label>
-                    <input type="time" id="time-off" class="form-control time-input">
-                </div>
-            </div>
-            <button class="btn-big btn-save" onclick="sendTimer()">
-                <i class="fas fa-save me-2"></i> LƯU HẸN GIỜ
-            </button>
-        </div>
-
     </div>
+
+    <div id="p-MANUAL" class="panel">
+        <button class="btn-big btn-on" onclick="sendFan('1')">BẬT QUẠT</button>
+        <button class="btn-big btn-off" onclick="sendFan('0')">TẮT QUẠT</button>
+    </div>
+
 </div>
 
 <script>
-    // ================= CẤU HÌNH MQTT =================
-    const mqtt_config = {
-        host: "7e225cbc2f0c41febc61a20d1a0c5b3d.s1.eu.hivemq.cloud",
-        port: 8884,
-        user: "ngoctuyka",
-        pass: "Tu12345678@",
-        useSSL: true
+    // --- CẤU HÌNH MQTT ---
+    const config = {
+        host: "8bdef73996bb4030affe9483eecde31b.s1.eu.hivemq.cloud",
+        port: 8884, user: "ngoctuyka", pass: "Tu12345678@", useSSL: true
     };
-    
     const prefix = "stem_thpt_physics_project_2025";
     const topics = {
         co2: prefix + "/data/co2",
-        status: prefix + "/status",
+        temp: prefix + "/data/temp", // Topic mới cho Nhiệt độ
+        hum: prefix + "/data/hum",   // Topic mới cho Độ ẩm
         mode: prefix + "/control/mode",
-        fan: prefix + "/control/fan",
-        timer: prefix + "/control/timer"
+        fan: prefix + "/control/fan"
     };
 
-    const clientID = "MobileApp-" + parseInt(Math.random() * 100000);
-    const client = new Paho.MQTT.Client(mqtt_config.host, mqtt_config.port, clientID);
+    const client = new Paho.MQTT.Client(config.host, config.port, "App-" + parseInt(Math.random()*10000));
 
-    // ================= LOGIC GIAO DIỆN =================
-    
-    // Chuyển Tab (Hiển thị ngay lập tức)
-    function switchMode(mode, btnElement) {
-        // 1. Gửi MQTT
-        let val = (mode === 'AUTO') ? "1" : (mode === 'TIMER' ? "2" : "0");
-        sendMQTT(topics.mode, val);
+    // --- LOGIC GIAO DIỆN ---
+    function setMode(mode, btn) {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+        document.getElementById('p-' + mode).classList.add('show');
 
-        // 2. Cập nhật giao diện (Active Button)
-        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-        btnElement.classList.add('active');
-
-        // 3. Hiện Panel tương ứng
-        document.querySelectorAll('.control-panel').forEach(p => p.classList.remove('show'));
-        document.getElementById('panel-' + mode).classList.add('show');
+        // Gửi lệnh: 1=Auto, 0=Manual
+        sendMQTT(topics.mode, (mode === 'AUTO' ? "1" : "0"));
     }
 
-    // Điều khiển quạt
-    function controlFan(state) {
+    function sendFan(state) {
         sendMQTT(topics.fan, state);
-        // Hiệu ứng rung nhẹ trên điện thoại (nếu hỗ trợ)
-        if(navigator.vibrate) navigator.vibrate(50);
     }
 
-    // Lưu hẹn giờ
-    function sendTimer() {
-        const tOn = document.getElementById("time-on").value;
-        const tOff = document.getElementById("time-off").value;
-        if(!tOn || !tOff) return alert("Vui lòng chọn giờ!");
-        
-        sendMQTT(topics.timer, tOn + "|" + tOff);
-        alert("Đã lưu cài đặt hẹn giờ!");
+    function updateGauge(id, val, max, color) {
+        document.getElementById("val-" + id).innerText = val;
+        if(id === 'co2') {
+            let pct = (val/max)*100;
+            document.getElementById("gauge-co2").style.background = `conic-gradient(${color} ${pct}%, #eee ${pct}%)`;
+            
+            let status = "Không khí Tốt";
+            if(val > 1000) status = "Cảnh báo nhẹ";
+            if(val > 2000) status = "NGUY HIỂM";
+            document.getElementById("status-co2").innerText = status;
+            document.getElementById("status-co2").style.color = color;
+        }
     }
 
-    // Hiển thị CO2 và Màu sắc
-    function updateGauge(val) {
-        document.getElementById("co2-val").innerText = val;
-        
-        let color = "#00ba94"; // Xanh
-        let statusText = "Không khí Tốt";
-
-        if(val > 1000) { color = "#ffb02e"; statusText = "Cảnh báo nhẹ"; } // Vàng
-        if(val > 2000) { color = "#ff4757"; statusText = "NGUY HIỂM!"; } // Đỏ
-
-        document.getElementById("air-status").innerText = statusText;
-        document.getElementById("air-status").style.color = color;
-        
-        // Vẽ lại vòng tròn
-        let percent = (val / 5000) * 100;
-        if(percent > 100) percent = 100;
-        document.getElementById("co2-gauge").style.background = `conic-gradient(${color} ${percent}%, #eee ${percent}%)`;
-    }
-
-    // ================= MQTT HANDLERS =================
-    
+    // --- MQTT HANDLERS ---
     client.onConnectionLost = (obj) => {
-        console.log("Mất kết nối: " + obj.errorMessage);
-        document.getElementById("conn-dot").className = "status-dot bg-offline";
+        console.log("Mất kết nối");
         document.getElementById("conn-text").innerText = "Offline";
     };
 
     client.onMessageArrived = (msg) => {
-        const topic = msg.destinationName;
         const payload = msg.payloadString;
+        const topic = msg.destinationName;
 
         if(topic === topics.co2) {
-            updateGauge(parseInt(payload));
-        } 
-        else if (topic === topics.status) {
-            const espLabel = document.getElementById("esp-status");
-            espLabel.innerText = (payload === "online") ? "ONLINE" : "OFFLINE";
-            espLabel.style.color = (payload === "online") ? "green" : "red";
+            let val = parseInt(payload);
+            let color = (val > 1000) ? "#ffc107" : "#28a745";
+            if(val > 2000) color = "#dc3545";
+            updateGauge('co2', val, 5000, color);
+        }
+        else if (topic === topics.temp) {
+            document.getElementById("val-temp").innerText = payload;
+        }
+        else if (topic === topics.hum) {
+            document.getElementById("val-hum").innerText = payload;
         }
     };
 
     function connect() {
-        console.log("Đang kết nối...");
         client.connect({
             onSuccess: () => {
-                console.log("Đã kết nối!");
-                document.getElementById("conn-dot").className = "status-dot bg-online";
+                console.log("Đã kết nối");
                 document.getElementById("conn-text").innerText = "Online";
+                // Đăng ký nhận cả 3 topic
                 client.subscribe(topics.co2);
-                client.subscribe(topics.status);
+                client.subscribe(topics.temp);
+                client.subscribe(topics.hum);
             },
-            onFailure: (e) => {
-                console.log("Lỗi: " + e.errorMessage);
-                // Thử kết nối lại sau 5s
-                setTimeout(connect, 5000);
-            },
-            useSSL: mqtt_config.useSSL,
-            userName: mqtt_config.user,
-            password: mqtt_config.pass
+            onFailure: (e) => { console.log("Lỗi: " + e.errorMessage); },
+            useSSL: config.useSSL, userName: config.user, password: config.pass
         });
     }
-
+    
     function sendMQTT(topic, msg) {
         if(client.isConnected()) {
             let m = new Paho.MQTT.Message(msg);
-            m.destinationName = topic;
-            m.retained = true;
+            m.destinationName = topic; m.retained = true;
             client.send(m);
-        } else {
-            console.log("Chưa kết nối Server!");
         }
     }
 
-    // Chạy khi mở App
     connect();
-
 </script>
 
 </body>
