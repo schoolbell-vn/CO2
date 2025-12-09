@@ -13,42 +13,36 @@
     <style>
         body { background: #f0f2f5; font-family: -apple-system, sans-serif; padding-bottom: 80px; }
         .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #fff; }
-        
-        /* HEADER */
         .header { background: linear-gradient(135deg, #0061f2, #00ba94); padding: 20px 20px 40px; color: white; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
-        
-        /* GAUGE & SENSORS */
         .gauge-card { background: white; margin: -30px 15px 10px; border-radius: 20px; padding: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
         .co2-circle { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#00ba94 0%, #eee 0%); margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; }
         .co2-inner { width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; }
-        
         .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 15px; }
         .s-card { background: #f8f9fa; padding: 10px; border-radius: 12px; text-align: center; border: 1px solid #eee; }
-        .s-val { font-size: 1.2rem; font-weight: 800; color: #333; }
-
-        /* PRESENCE CARD (Quan trọng) */
         .presence-card { margin: 10px 15px; padding: 15px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
         .is-present { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
         .no-present { background: #e2e3e5; color: #41464b; border: 1px solid #d3d6d8; }
-
-        /* CONTROLS */
+        
         .control-area { padding: 15px; }
         .mode-sw { display: flex; background: #eee; border-radius: 10px; padding: 4px; margin-bottom: 15px; }
         .mode-btn { flex: 1; border: none; background: none; padding: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; color: #666; }
         .mode-btn.active { background: white; color: #0061f2; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-        .btn-big { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: bold; margin-bottom: 8px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-big { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: bold; margin-bottom: 5px; color: white; font-size: 0.9rem; }
         .btn-on { background: #ff4757; } .btn-off { background: #2f3542; } .btn-save { background: #0061f2; }
         
         .panel { display: none; } .panel.show { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from {opacity:0; transform:translateY(5px);} to {opacity:1; transform:translateY(0);} }
+        
+        .timer-group { background: #f8f9fa; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; }
+        .timer-label { font-size: 0.85rem; font-weight: bold; color: #555; margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="header d-flex justify-content-between align-items-center">
-        <div><h5 class="m-0 fw-bold">Smart Classroom</h5><small>IoT Monitor System</small></div>
+        <div><h5 class="m-0 fw-bold">Smart Classroom</h5><small>3 Devices Control</small></div>
         <button onclick="logout()" class="btn btn-sm btn-light text-primary rounded-circle"><i class="fas fa-sign-out-alt"></i></button>
     </div>
 
@@ -58,16 +52,13 @@
     </div>
 
     <div class="sensor-grid">
-        <div class="s-card"><i class="fas fa-temperature-high text-danger"></i> <span id="v-temp" class="s-val">--</span>°C</div>
-        <div class="s-card"><i class="fas fa-tint text-primary"></i> <span id="v-hum" class="s-val">--</span>%</div>
-        <div class="s-card" style="grid-column: span 2;"><i class="fas fa-smog text-secondary"></i> Bụi PM2.5: <span id="v-dust" class="s-val">--</span> µg/m³</div>
+        <div class="s-card"><i class="fas fa-temperature-high text-danger"></i> <span id="v-temp" style="font-weight:bold">--</span>°C</div>
+        <div class="s-card"><i class="fas fa-tint text-primary"></i> <span id="v-hum" style="font-weight:bold">--</span>%</div>
+        <div class="s-card" style="grid-column: span 2;"><i class="fas fa-smog text-secondary"></i> Bụi: <span id="v-dust" style="font-weight:bold">--</span> µg/m³</div>
     </div>
 
     <div class="presence-card no-present" id="card-occ">
-        <div class="d-flex align-items-center gap-2">
-            <i class="fas fa-user-friends fa-lg"></i>
-            <strong>Trạng thái lớp:</strong>
-        </div>
+        <div><i class="fas fa-user-friends"></i> <strong>Hiện diện:</strong></div>
         <span id="txt-occ" class="badge bg-secondary">VẮNG</span>
     </div>
 
@@ -79,31 +70,54 @@
         </div>
 
         <div id="p-AUTO" class="panel show">
-            <div class="alert alert-info border-0 small">
-                <i class="fas fa-bolt me-1"></i> <strong>Tiết kiệm năng lượng:</strong><br>
-                Nếu <b>không có người</b>, hệ thống sẽ tự động tắt hết Đèn và Quạt.
+            <div class="alert alert-info border-0 small p-2">
+                <i class="fas fa-robot"></i> <strong>Logic Tự Động:</strong><br>
+                1. <b>Quạt Hút:</b> Bật khi CO2>1000 hoặc Bụi>50 hoặc Ẩm>80%.<br>
+                2. <b>Không người:</b> TẮT HẾT TOÀN BỘ.<br>
             </div>
-            <div class="d-flex gap-2">
-                <div class="w-50 bg-light p-2 rounded text-center small">Quạt: <b id="st-fan">--</b></div>
-                <div class="w-50 bg-light p-2 rounded text-center small">Đèn: <b id="st-light">--</b></div>
+            <div class="d-flex justify-content-between text-center small bg-light p-2 rounded">
+                <div class="px-1">Q.Trần<br><b id="st-ceil">--</b></div>
+                <div class="px-1" style="border-left:1px solid #ddd; border-right:1px solid #ddd">Q.Hút<br><b id="st-exh">--</b></div>
+                <div class="px-1">Đèn<br><b id="st-light">--</b></div>
             </div>
         </div>
 
         <div id="p-MANUAL" class="panel">
-            <div class="row g-2">
-                <div class="col-6"><button class="btn-big btn-on" onclick="sendCmd('fan','1')"><i class="fas fa-fan"></i> Bật Quạt</button></div>
-                <div class="col-6"><button class="btn-big btn-off" onclick="sendCmd('fan','0')"><i class="fas fa-stop"></i> Tắt Quạt</button></div>
-                <div class="col-6"><button class="btn-big btn-on" style="background:#f1c40f; color:#000" onclick="sendCmd('light','1')"><i class="fas fa-lightbulb"></i> Bật Đèn</button></div>
-                <div class="col-6"><button class="btn-big btn-off" onclick="sendCmd('light','0')"><i class="fas fa-power-off"></i> Tắt Đèn</button></div>
+            <div class="row g-2 mb-2 align-items-center">
+                <div class="col-4 fw-bold small">Quạt Trần:</div>
+                <div class="col-4"><button class="btn-big btn-on m-0" onclick="sendCmd('ceil','1')">BẬT</button></div>
+                <div class="col-4"><button class="btn-big btn-off m-0" onclick="sendCmd('ceil','0')">TẮT</button></div>
+            </div>
+            <div class="row g-2 mb-2 align-items-center">
+                <div class="col-4 fw-bold small">Quạt Hút:</div>
+                <div class="col-4"><button class="btn-big btn-on m-0" onclick="sendCmd('exh','1')">BẬT</button></div>
+                <div class="col-4"><button class="btn-big btn-off m-0" onclick="sendCmd('exh','0')">TẮT</button></div>
+            </div>
+            <div class="row g-2 align-items-center">
+                <div class="col-4 fw-bold small">Đèn Điện:</div>
+                <div class="col-4"><button class="btn-big btn-on m-0" style="background:#f1c40f; color:#000" onclick="sendCmd('light','1')">BẬT</button></div>
+                <div class="col-4"><button class="btn-big btn-off m-0" onclick="sendCmd('light','0')">TẮT</button></div>
             </div>
         </div>
 
         <div id="p-TIMER" class="panel">
-            <div class="input-group mb-3">
-                <span class="input-group-text">Bật</span><input type="time" id="t-on" class="form-control">
-                <span class="input-group-text">Tắt</span><input type="time" id="t-off" class="form-control">
+            <div class="timer-group">
+                <span class="timer-label"><i class="far fa-clock"></i> Hẹn giờ ĐÈN & Q.TRẦN</span>
+                <div class="input-group input-group-sm mb-2">
+                    <span class="input-group-text">Bật</span><input type="time" id="t-light-on" class="form-control">
+                    <span class="input-group-text">Tắt</span><input type="time" id="t-light-off" class="form-control">
+                </div>
+                <button class="btn btn-sm btn-primary w-100" onclick="sendTimer('light')">Lưu Hẹn Giờ Đèn</button>
             </div>
-            <button class="btn-big btn-save" onclick="sendTimer()">Lưu Hẹn Giờ (Quạt)</button>
+
+            <div class="timer-group">
+                <span class="timer-label"><i class="fas fa-fan"></i> Hẹn giờ QUẠT HÚT</span>
+                <div class="input-group input-group-sm mb-2">
+                    <span class="input-group-text">Bật</span><input type="time" id="t-exh-on" class="form-control">
+                    <span class="input-group-text">Tắt</span><input type="time" id="t-exh-off" class="form-control">
+                </div>
+                <button class="btn btn-sm btn-success w-100" onclick="sendTimer('exh')">Lưu Hẹn Giờ Quạt Hút</button>
+            </div>
         </div>
     </div>
 </div>
@@ -111,10 +125,24 @@
 <script>
     const cfg = { host: "7e225cbc2f0c41febc61a20d1a0c5b3d.s1.eu.hivemq.cloud", port: 8884, user: "ngoctuyka", pass: "Tu12345678@", ssl: true };
     const pfx = "stem_thpt_physics_project_2025";
+    // Định nghĩa Topic mới
     const topics = {
         co2: pfx+"/data/co2", temp: pfx+"/data/temp", hum: pfx+"/data/hum", dust: pfx+"/data/dust", occ: pfx+"/data/occupancy",
-        mode: pfx+"/control/mode", fan: pfx+"/control/fan", light: pfx+"/control/light", timer: pfx+"/control/timer",
-        fan_st: pfx+"/status/fan", light_st: pfx+"/status/light"
+        mode: pfx+"/control/mode", 
+        
+        // Topic Điều khiển
+        cmd_ceil: pfx+"/control/fan_ceil", 
+        cmd_exh: pfx+"/control/fan_exh", 
+        cmd_light: pfx+"/control/light",
+        
+        // Topic Hẹn giờ
+        tmr_light: pfx+"/control/timer_light",
+        tmr_exh: pfx+"/control/timer_exh",
+
+        // Topic Trạng thái thực
+        st_ceil: pfx+"/status/ceil",
+        st_exh: pfx+"/status/exh",
+        st_light: pfx+"/status/light"
     };
 
     const client = new Paho.MQTT.Client(cfg.host, cfg.port, "Web-" + parseInt(Math.random()*1000));
@@ -125,11 +153,22 @@
         let val = (m==='AUTO')?"1":(m==='TIMER'?"2":"0");
         sendMQTT(topics.mode, val);
     }
-    function sendCmd(dev, val) { sendMQTT(topics[dev], val); }
-    function sendTimer() {
-        let t1=document.getElementById('t-on').value, t2=document.getElementById('t-off').value;
-        if(t1&&t2) { sendMQTT(topics.timer, t1+"|"+t2); alert("Đã lưu!"); }
+    
+    function sendCmd(dev, val) { 
+        if(dev==='ceil') sendMQTT(topics.cmd_ceil, val);
+        if(dev==='exh') sendMQTT(topics.cmd_exh, val);
+        if(dev==='light') sendMQTT(topics.cmd_light, val);
     }
+
+    function sendTimer(type) {
+        let t1, t2, topic;
+        if(type === 'light') { t1=document.getElementById('t-light-on').value; t2=document.getElementById('t-light-off').value; topic=topics.tmr_light; }
+        if(type === 'exh') { t1=document.getElementById('t-exh-on').value; t2=document.getElementById('t-exh-off').value; topic=topics.tmr_exh; }
+        
+        if(t1 && t2) { sendMQTT(topic, t1+"|"+t2); alert("Đã lưu hẹn giờ!"); }
+        else alert("Vui lòng nhập đủ giờ Bật và Tắt");
+    }
+
     function logout() { sessionStorage.removeItem('isLoggedIn'); window.location.href='login.html'; }
     function sendMQTT(t,m) { if(client.isConnected()) client.send(t,m,0,true); }
 
@@ -140,28 +179,25 @@
             let v=parseInt(p), c=(v>1000)?(v>2000?"#e74c3c":"#f1c40f"):"#00ba94";
             document.getElementById('v-co2').innerText=v;
             document.getElementById('g-co2').style.background=`conic-gradient(${c} ${v/50}%, #eee 0%)`;
-            document.getElementById('st-co2').innerText=(v>1000)?"Khí kém":"Khí tốt";
+            document.getElementById('st-co2').innerText=(v>1000)?"Khí kém":"Tốt";
             document.getElementById('st-co2').style.color=c;
         }
         if(t===topics.temp) document.getElementById('v-temp').innerText=p;
         if(t===topics.hum) document.getElementById('v-hum').innerText=p;
         if(t===topics.dust) document.getElementById('v-dust').innerText=p;
-        if(t===topics.occ) { // XỬ LÝ GIAO DIỆN KHI CÓ NGƯỜI/KHÔNG NGƯỜI
+        
+        if(t===topics.occ) {
             let hasP = (p==="1");
             let card = document.getElementById('card-occ');
             let txt = document.getElementById('txt-occ');
-            if(hasP) {
-                card.className = "presence-card is-present";
-                txt.className = "badge bg-success";
-                txt.innerText = "CÓ NGƯỜI";
-            } else {
-                card.className = "presence-card no-present";
-                txt.className = "badge bg-secondary";
-                txt.innerText = "VẮNG";
-            }
+            if(hasP) { card.className="presence-card is-present"; txt.className="badge bg-success"; txt.innerText="CÓ NGƯỜI"; } 
+            else { card.className="presence-card no-present"; txt.className="badge bg-secondary"; txt.innerText="VẮNG"; }
         }
-        if(t===topics.fan_st) document.getElementById('st-fan').innerText = (p==="1"?"BẬT":"TẮT");
-        if(t===topics.light_st) document.getElementById('st-light').innerText = (p==="1"?"SÁNG":"TẮT");
+
+        // Cập nhật trạng thái text
+        if(t===topics.st_ceil) document.getElementById('st-ceil').innerText = (p==="1"?"ON":"OFF");
+        if(t===topics.st_exh) document.getElementById('st-exh').innerText = (p==="1"?"ON":"OFF");
+        if(t===topics.st_light) document.getElementById('st-light').innerText = (p==="1"?"ON":"OFF");
     };
 
     client.connect({ onSuccess:()=>{ console.log("Connected"); document.getElementById('st-co2').innerText="Online"; Object.values(topics).forEach(t => client.subscribe(t)); }, useSSL:cfg.ssl, userName:cfg.user, password:cfg.pass });
