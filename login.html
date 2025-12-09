@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Đăng Nhập Hệ Thống</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+        body {
+            background: #f0f2f5;
+            font-family: -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+        }
+        h2 { margin-top: 0; color: #333; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #0061f2, #00ba94);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>STEM MONITOR</h2>
+        <p style="color:#666; font-size:0.9rem">Vui lòng đăng nhập</p>
+        
+        <input type="text" id="user" placeholder="Tên đăng nhập">
+        <input type="password" id="pass" placeholder="Mật khẩu">
+        <button onclick="login()">ĐĂNG NHẬP</button>
+    </div>
+
+    <script>
+        // === CẤU HÌNH TÀI KHOẢN TẠI ĐÂY ===
+        const U = "admin";
+        const P = "123456"; 
+
+        function login() {
+            var u = document.getElementById("user").value;
+            var p = document.getElementById("pass").value;
+            
+            if(u === U && p === P) {
+                // Lưu trạng thái đã đăng nhập
+                sessionStorage.setItem('isLoggedIn', 'true');
+                // Chuyển hướng về trang chủ
+                window.location.href = 'index.html';
+            } else {
+                alert("Sai tên đăng nhập hoặc mật khẩu!");
+            }
+        }
+    </script>
+</body>
+</html>
