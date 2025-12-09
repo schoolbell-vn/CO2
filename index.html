@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart STEM Monitor</title>
+    <title>Smart Classroom Control</title>
     <script>if(sessionStorage.getItem('isLoggedIn')!=='true')window.location.href='login.html';</script>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,12 +17,13 @@
         .gauge-card { background: white; margin: -30px 15px 10px; border-radius: 20px; padding: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
         .co2-circle { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#00ba94 0%, #eee 0%); margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; }
         .co2-inner { width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; }
+        
         .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 15px; }
         .s-card { background: #f8f9fa; padding: 10px; border-radius: 12px; text-align: center; border: 1px solid #eee; }
         .presence-card { margin: 10px 15px; padding: 15px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
         .is-present { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
         .no-present { background: #e2e3e5; color: #41464b; border: 1px solid #d3d6d8; }
-        
+
         .control-area { padding: 15px; }
         .mode-sw { display: flex; background: #eee; border-radius: 10px; padding: 4px; margin-bottom: 15px; }
         .mode-btn { flex: 1; border: none; background: none; padding: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; color: #666; }
@@ -30,12 +31,9 @@
 
         .btn-big { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: bold; margin-bottom: 5px; color: white; font-size: 0.9rem; }
         .btn-on { background: #ff4757; } .btn-off { background: #2f3542; } .btn-save { background: #0061f2; }
-        
         .panel { display: none; } .panel.show { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from {opacity:0; transform:translateY(5px);} to {opacity:1; transform:translateY(0);} }
-        
         .timer-group { background: #f8f9fa; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; }
-        .timer-label { font-size: 0.85rem; font-weight: bold; color: #555; margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -71,11 +69,16 @@
 
         <div id="p-AUTO" class="panel show">
             <div class="alert alert-info border-0 small p-2">
-                <i class="fas fa-robot"></i> <strong>Logic Tự Động:</strong><br>
-                1. <b>Quạt Hút:</b> Bật khi CO2>1000 hoặc Bụi>50 hoặc Ẩm>80%.<br>
-                2. <b>Không người:</b> TẮT HẾT TOÀN BỘ.<br>
+                <i class="fas fa-robot"></i> <strong>Chế độ Tự Động:</strong><br>
+                - <b>Không có người:</b> TẮT HẾT TẤT CẢ.<br>
+                - <b>Có người:</b> Đèn bật. Quạt hút bật khi khí bẩn. Quạt trần giữ nguyên trạng thái bạn bật.
             </div>
-            <div class="d-flex justify-content-between text-center small bg-light p-2 rounded">
+            <div class="row g-2 mb-2">
+                <div class="col-12 small text-muted text-center">Điều khiển Quạt Trần (Khi có người):</div>
+                <div class="col-6"><button class="btn-big btn-on m-0" onclick="sendCmd('ceil','1')">BẬT TRẦN</button></div>
+                <div class="col-6"><button class="btn-big btn-off m-0" onclick="sendCmd('ceil','0')">TẮT TRẦN</button></div>
+             </div>
+            <div class="d-flex justify-content-between text-center small bg-light p-2 rounded mt-2">
                 <div class="px-1">Q.Trần<br><b id="st-ceil">--</b></div>
                 <div class="px-1" style="border-left:1px solid #ddd; border-right:1px solid #ddd">Q.Hút<br><b id="st-exh">--</b></div>
                 <div class="px-1">Đèn<br><b id="st-light">--</b></div>
@@ -83,6 +86,10 @@
         </div>
 
         <div id="p-MANUAL" class="panel">
+            <div class="alert alert-warning border-0 small p-2 mb-2">
+                <i class="fas fa-hand-paper"></i> <strong>Chế độ Thủ công:</strong><br>
+                Bạn toàn quyền kiểm soát. Cảm biến sẽ bị bỏ qua.
+            </div>
             <div class="row g-2 mb-2 align-items-center">
                 <div class="col-4 fw-bold small">Quạt Trần:</div>
                 <div class="col-4"><button class="btn-big btn-on m-0" onclick="sendCmd('ceil','1')">BẬT</button></div>
@@ -102,12 +109,12 @@
 
         <div id="p-TIMER" class="panel">
             <div class="timer-group">
-                <span class="timer-label"><i class="far fa-clock"></i> Hẹn giờ ĐÈN & Q.TRẦN</span>
+                <span class="timer-label"><i class="far fa-clock"></i> Hẹn giờ TẮT ĐIỆN (Đèn)</span>
                 <div class="input-group input-group-sm mb-2">
                     <span class="input-group-text">Bật</span><input type="time" id="t-light-on" class="form-control">
                     <span class="input-group-text">Tắt</span><input type="time" id="t-light-off" class="form-control">
                 </div>
-                <button class="btn btn-sm btn-primary w-100" onclick="sendTimer('light')">Lưu Hẹn Giờ Đèn</button>
+                <button class="btn btn-sm btn-primary w-100" onclick="sendTimer('light')">Lưu</button>
             </div>
 
             <div class="timer-group">
@@ -116,7 +123,7 @@
                     <span class="input-group-text">Bật</span><input type="time" id="t-exh-on" class="form-control">
                     <span class="input-group-text">Tắt</span><input type="time" id="t-exh-off" class="form-control">
                 </div>
-                <button class="btn btn-sm btn-success w-100" onclick="sendTimer('exh')">Lưu Hẹn Giờ Quạt Hút</button>
+                <button class="btn btn-sm btn-success w-100" onclick="sendTimer('exh')">Lưu</button>
             </div>
         </div>
     </div>
@@ -125,24 +132,12 @@
 <script>
     const cfg = { host: "7e225cbc2f0c41febc61a20d1a0c5b3d.s1.eu.hivemq.cloud", port: 8884, user: "ngoctuyka", pass: "Tu12345678@", ssl: true };
     const pfx = "stem_thpt_physics_project_2025";
-    // Định nghĩa Topic mới
     const topics = {
         co2: pfx+"/data/co2", temp: pfx+"/data/temp", hum: pfx+"/data/hum", dust: pfx+"/data/dust", occ: pfx+"/data/occupancy",
         mode: pfx+"/control/mode", 
-        
-        // Topic Điều khiển
-        cmd_ceil: pfx+"/control/fan_ceil", 
-        cmd_exh: pfx+"/control/fan_exh", 
-        cmd_light: pfx+"/control/light",
-        
-        // Topic Hẹn giờ
-        tmr_light: pfx+"/control/timer_light",
-        tmr_exh: pfx+"/control/timer_exh",
-
-        // Topic Trạng thái thực
-        st_ceil: pfx+"/status/ceil",
-        st_exh: pfx+"/status/exh",
-        st_light: pfx+"/status/light"
+        cmd_ceil: pfx+"/control/fan_ceil", cmd_exh: pfx+"/control/fan_exh", cmd_light: pfx+"/control/light",
+        tmr_light: pfx+"/control/timer_light", tmr_exh: pfx+"/control/timer_exh",
+        st_ceil: pfx+"/status/ceil", st_exh: pfx+"/status/exh", st_light: pfx+"/status/light"
     };
 
     const client = new Paho.MQTT.Client(cfg.host, cfg.port, "Web-" + parseInt(Math.random()*1000));
@@ -164,9 +159,7 @@
         let t1, t2, topic;
         if(type === 'light') { t1=document.getElementById('t-light-on').value; t2=document.getElementById('t-light-off').value; topic=topics.tmr_light; }
         if(type === 'exh') { t1=document.getElementById('t-exh-on').value; t2=document.getElementById('t-exh-off').value; topic=topics.tmr_exh; }
-        
         if(t1 && t2) { sendMQTT(topic, t1+"|"+t2); alert("Đã lưu hẹn giờ!"); }
-        else alert("Vui lòng nhập đủ giờ Bật và Tắt");
     }
 
     function logout() { sessionStorage.removeItem('isLoggedIn'); window.location.href='login.html'; }
@@ -194,7 +187,6 @@
             else { card.className="presence-card no-present"; txt.className="badge bg-secondary"; txt.innerText="VẮNG"; }
         }
 
-        // Cập nhật trạng thái text
         if(t===topics.st_ceil) document.getElementById('st-ceil').innerText = (p==="1"?"ON":"OFF");
         if(t===topics.st_exh) document.getElementById('st-exh').innerText = (p==="1"?"ON":"OFF");
         if(t===topics.st_light) document.getElementById('st-light').innerText = (p==="1"?"ON":"OFF");
