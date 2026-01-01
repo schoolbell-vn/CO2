@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Classroom v3</title>
-    <!-- Kiểm tra đăng nhập -->
+    <title>Hệ Thống Lớp Học Thông Minh</title>
     <script>if(sessionStorage.getItem('isLoggedIn')!=='true')window.location.href='login.html';</script>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,259 +11,285 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 
     <style>
-        body { background: #f0f2f5; font-family: -apple-system, sans-serif; padding-bottom: 50px; }
-        .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #fff; }
-        .header { background: linear-gradient(135deg, #0d6efd, #0dcaf0); padding: 20px 20px 40px; color: white; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
+        body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; padding-bottom: 100px; }
+        .app-container { max-width: 500px; margin: 0 auto; min-height: 100vh; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         
-        .gauge-card { background: white; margin: -30px 15px 15px; border-radius: 20px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
-        .co2-circle { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#20c997 0%, #eee 0%); margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; }
-        .co2-inner { width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; }
+        /* HEADER */
+        .header { background: linear-gradient(135deg, #0d6efd, #0dcaf0); padding: 25px 20px 50px; color: white; border-bottom-left-radius: 35px; border-bottom-right-radius: 35px; }
+        .header h5 { font-weight: 700; letter-spacing: 0.5px; }
         
-        .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 15px; margin-bottom: 15px; }
-        .s-card { background: #f8f9fa; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #e9ecef; }
-        .s-val { font-size: 1.2rem; font-weight: 800; color: #333; }
+        /* GAUGE & SENSORS */
+        .gauge-card { background: white; margin: -40px 20px 15px; border-radius: 25px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; position: relative; }
+        .co2-circle { width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(#eee 100%, #eee 0%); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; transition: background 0.5s ease; }
+        .co2-inner { width: 115px; height: 115px; background: white; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
         
-        .presence-card { margin: 0 15px 15px; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; font-weight: bold; }
-        .has-person { background: #d1e7dd; color: #0f5132; border: 1px solid #a3cfbb; }
-        .no-person { background: #e2e3e5; color: #41464b; border: 1px solid #d3d6d8; }
+        .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
+        .s-card { background: #f8f9fa; padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #edf2f7; transition: transform 0.2s; }
+        .s-card:active { transform: scale(0.98); }
+        .s-val { font-size: 1.4rem; font-weight: 800; color: #2d3436; display: block; margin-top: 5px; }
+        .s-label { font-size: 0.8rem; color: #636e72; text-transform: uppercase; font-weight: 600; }
 
-        .control-area { padding: 0 15px; }
-        .mode-sw { display: flex; background: #eee; border-radius: 10px; padding: 4px; margin-bottom: 15px; }
-        .mode-btn { flex: 1; border: none; background: none; padding: 10px; border-radius: 8px; font-weight: 600; color: #666; }
-        .mode-btn.active { background: white; color: #0d6efd; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /* PRESENCE CARD */
+        .presence-card { margin: 15px 20px; padding: 15px 20px; border-radius: 15px; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s; border: 2px solid transparent; }
+        .is-present { background: #d1e7dd; color: #0f5132; border-color: #badbcc; }
+        .no-present { background: #e2e3e5; color: #41464b; border-color: #d3d6d8; }
+        .pulse { animation: pulse-animation 2s infinite; }
+        @keyframes pulse-animation { 0% { box-shadow: 0 0 0 0px rgba(25, 135, 84, 0.2); } 100% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); } }
 
-        .device-box { border: 1px solid #eee; border-radius: 12px; padding: 15px; margin-bottom: 10px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .device-title { font-weight: bold; font-size: 1rem; margin-bottom: 10px; color: #444; display: block; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
-        
-        /* STYLE MỚI CHO NÚT BẤM CÓ PHẢN HỒI */
-        .btn-control {
-            width: 100%; padding: 12px; border-radius: 8px; border: 2px solid transparent;
-            font-weight: bold; color: #555; background-color: #f1f3f5;
-            transition: all 0.2s;
-        }
-        /* Trạng thái nút khi được chọn (Active) */
-        .btn-control.active-on {
-            background-color: #198754; color: white; border-color: #146c43;
-            box-shadow: 0 0 8px rgba(25, 135, 84, 0.4);
-        }
-        .btn-control.active-off {
-            background-color: #6c757d; color: white; border-color: #565e64;
-            box-shadow: 0 0 8px rgba(108, 117, 125, 0.4);
-        }
-        /* Hiệu ứng khi bấm */
-        .btn-control:active { transform: scale(0.96); }
+        /* CONTROLS */
+        .control-area { padding: 20px; background: white; border-top-left-radius: 30px; border-top-right-radius: 30px; margin-top: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.03); }
+        .mode-sw { display: flex; background: #f1f3f5; border-radius: 15px; padding: 5px; margin-bottom: 20px; }
+        .mode-btn { flex: 1; border: none; background: none; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 14px; color: #868e96; transition: 0.3s; }
+        .mode-btn.active { background: white; color: #0d6efd; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-        .panel { display: none; } .panel.show { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from {opacity:0; transform:translateY(5px);} to {opacity:1; transform:translateY(0);} }
+        .btn-big { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; margin-bottom: 10px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; transition: 0.2s; }
+        .btn-big:active { transform: scale(0.97); }
+        .btn-on { background: linear-gradient(45deg, #ff6b6b, #ee5253); box-shadow: 0 4px 15px rgba(238, 82, 83, 0.3); } 
+        .btn-off { background: #2d3436; } 
+        .btn-save { background: #0984e3; }
+        .btn-light-on { background: linear-gradient(45deg, #f1c40f, #f39c12); color: #fff; box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3); }
         
-        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; min-width: 60px; }
-        .st-on { background: #d1e7dd; color: #0f5132; }
-        .st-off { background: #f8d7da; color: #842029; }
+        .panel { display: none; } .panel.show { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+        
+        .status-dot { height: 10px; width: 10px; background-color: #bbb; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .online { background-color: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="header d-flex justify-content-between align-items-center">
-        <div><h5 class="m-0 fw-bold">LỚP HỌC THÔNG MINH</h5><small>Giám sát & Điều khiển</small></div>
-        <button onclick="logout()" class="btn btn-sm btn-light text-primary rounded-circle"><i class="fas fa-sign-out-alt"></i></button>
+        <div>
+            <h5 class="m-0"><i class="fas fa-graduation-cap me-2"></i>Smart Classroom</h5>
+            <small id="connection-status"><span class="status-dot"></span>Đang kết nối...</small>
+        </div>
+        <button onclick="logout()" class="btn btn-sm btn-light text-primary rounded-circle shadow-sm" style="width: 35px; height: 35px;"><i class="fas fa-sign-out-alt"></i></button>
     </div>
 
-    <!-- CO2 -->
     <div class="gauge-card">
-        <div class="co2-circle" id="g-co2"><div class="co2-inner"><span id="v-co2" style="font-size:1.8rem; font-weight:bold">--</span><span style="font-size:0.7rem">PPM</span></div></div>
-        <div id="st-co2" class="fw-bold text-success small">Đang kết nối...</div>
+        <div class="co2-circle" id="g-co2">
+            <div class="co2-inner">
+                <span id="v-co2" style="font-size:2rem; font-weight:800; color:#333; line-height: 1;">--</span>
+                <span style="font-size:0.75rem; color:#888; font-weight:600">PPM</span>
+            </div>
+        </div>
+        <div id="st-co2" class="fw-bold small badge bg-secondary px-3 py-2 rounded-pill">Đang tải dữ liệu...</div>
     </div>
 
-    <!-- SENSORS -->
     <div class="sensor-grid">
-        <div class="s-card"><i class="fas fa-temperature-high text-danger"></i> <span id="v-temp" class="s-val">--</span>°C</div>
-        <div class="s-card"><i class="fas fa-tint text-primary"></i> <span id="v-hum" class="s-val">--</span>%</div>
-        <div class="s-card" style="grid-column: span 2;">
-            <div class="d-flex justify-content-between px-3">
-                <span><i class="fas fa-smog text-secondary"></i> Bụi PM2.5:</span>
-                <span><span id="v-dust" class="s-val">--</span> µg/m³</span>
+        <div class="s-card">
+            <i class="fas fa-temperature-high text-danger mb-2" style="font-size: 1.2rem;"></i>
+            <span class="s-label d-block">Nhiệt độ</span>
+            <span id="v-temp" class="s-val">--°C</span>
+        </div>
+        <div class="s-card">
+            <i class="fas fa-tint text-primary mb-2" style="font-size: 1.2rem;"></i>
+            <span class="s-label d-block">Độ ẩm</span>
+            <span id="v-hum" class="s-val">--%</span>
+        </div>
+        <div class="s-card" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between; padding: 15px 25px;">
+            <div style="text-align: left;">
+                <i class="fas fa-smog text-secondary mb-1"></i> 
+                <span class="s-label">Bụi PM2.5</span>
             </div>
+            <span id="v-dust" class="s-val" style="margin:0; font-size: 1.6rem;">-- <small style="font-size:0.9rem; color:#888">µg/m³</small></span>
         </div>
     </div>
 
-    <!-- PRESENCE -->
-    <div class="presence-card no-person" id="card-occ">
-        <div><i class="fas fa-user-friends me-2"></i>Hiện diện:</div>
-        <span id="txt-occ">VẮNG</span>
+    <div class="presence-card no-present" id="card-occ">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fas fa-user-friends fa-2x"></i>
+            <div style="line-height: 1.2;">
+                <strong style="font-size: 1.1rem;">Cảm biến người</strong><br>
+                <small id="lbl-occ-desc" style="opacity: 0.8;">Không phát hiện</small>
+            </div>
+        </div>
+        <span id="txt-occ" class="badge bg-secondary rounded-pill px-3">VẮNG</span>
     </div>
 
-    <!-- CONTROL -->
     <div class="control-area">
         <div class="mode-sw">
-            <button class="mode-btn active" onclick="setMode('AUTO', this)">TỰ ĐỘNG</button>
-            <button class="mode-btn" onclick="setMode('MANUAL', this)">THỦ CÔNG</button>
+            <button class="mode-btn active" onclick="setMode('AUTO', this)">Tự động</button>
+            <button class="mode-btn" onclick="setMode('MANUAL', this)">Thủ công</button>
+            <button class="mode-btn" onclick="setMode('TIMER', this)">Hẹn giờ</button>
         </div>
 
-        <!-- PANEL AUTO -->
         <div id="p-AUTO" class="panel show">
-            <div class="alert alert-primary border-0 small mb-3">
-                <i class="fas fa-magic me-1"></i> <strong>Nguyên lý hoạt động:</strong><br>
-                - <b>Vắng người:</b> TẮT HẾT.<br>
-                - <b>Có người:</b> Đèn bật. Quạt hút bật khi khí bẩn. Quạt trần chạy theo ý muốn (nhớ trạng thái).
+            <div class="alert alert-primary border-0 small shadow-sm">
+                <i class="fas fa-robot me-2"></i> <strong>Chế độ thông minh:</strong><br>
+                Hệ thống tự động BẬT khi có người và TẮT sau khi vắng người (60s). Quạt hút tự chạy khi không khí xấu.
             </div>
-            
-            <div class="d-flex justify-content-between text-center small bg-light p-2 rounded mb-3">
-                <div class="px-1">Q.Trần<br><b id="st-ceil">--</b></div>
-                <div class="px-1" style="border-left:1px solid #ddd; border-right:1px solid #ddd">Q.Hút<br><b id="st-exh">--</b></div>
-                <div class="px-1">Đèn<br><b id="st-light">--</b></div>
-            </div>
-
-            <!-- Nút chỉnh Quạt trần trong Auto -->
-            <div class="device-box">
-                <small class="text-muted d-block mb-1 text-center fw-bold">Điều khiển Quạt Trần (Khi có người):</small>
-                <div class="row g-2">
-                    <div class="col-6"><button id="btn-ceil-on-auto" class="btn-control" onclick="sendCmd('ceil','1', 'auto')">BẬT TRẦN</button></div>
-                    <div class="col-6"><button id="btn-ceil-off-auto" class="btn-control" onclick="sendCmd('ceil','0', 'auto')">TẮT TRẦN</button></div>
+            <div class="d-flex gap-2 mt-3">
+                <div class="w-50 bg-light p-3 rounded-4 text-center border">
+                    <small class="text-muted d-block mb-1">TRẠNG THÁI QUẠT</small>
+                    <b id="st-fan-auto" class="text-primary" style="font-size: 1.1rem;">--</b>
                 </div>
-            </div>
-
-            <!-- Nút chỉnh Đèn trong Auto -->
-            <div class="device-box">
-                <small class="text-muted d-block mb-1 text-center fw-bold">Điều khiển Đèn (Khi có người):</small>
-                <div class="row g-2">
-                    <div class="col-6"><button id="btn-light-on-auto" class="btn-control" onclick="sendCmd('light','1', 'auto')">BẬT ĐÈN</button></div>
-                    <div class="col-6"><button id="btn-light-off-auto" class="btn-control" onclick="sendCmd('light','0', 'auto')">TẮT ĐÈN</button></div>
+                <div class="w-50 bg-light p-3 rounded-4 text-center border">
+                    <small class="text-muted d-block mb-1">TRẠNG THÁI ĐÈN</small>
+                    <b id="st-light-auto" class="text-warning" style="font-size: 1.1rem;">--</b>
                 </div>
             </div>
         </div>
 
-        <!-- PANEL MANUAL -->
         <div id="p-MANUAL" class="panel">
-            <!-- 1. Quạt Trần -->
-            <div class="device-box">
-                <span class="device-title"><i class="fas fa-fan"></i> QUẠT TRẦN</span>
-                <div class="row g-2">
-                    <div class="col-6"><button id="btn-ceil-on" class="btn-control" onclick="sendCmd('ceil','1')">BẬT</button></div>
-                    <div class="col-6"><button id="btn-ceil-off" class="btn-control" onclick="sendCmd('ceil','0')">TẮT</button></div>
-                </div>
+            <div class="row g-2">
+                <div class="col-6"><button class="btn-big btn-on" onclick="sendCmd('fan_ceil','1')"><i class="fas fa-fan"></i> Bật Quạt</button></div>
+                <div class="col-6"><button class="btn-big btn-off" onclick="sendCmd('fan_ceil','0')"><i class="fas fa-ban"></i> Tắt Quạt</button></div>
+                <div class="col-6"><button class="btn-big btn-light-on" onclick="sendCmd('light','1')"><i class="fas fa-lightbulb"></i> Bật Đèn</button></div>
+                <div class="col-6"><button class="btn-big btn-off" onclick="sendCmd('light','0')"><i class="fas fa-power-off"></i> Tắt Đèn</button></div>
+                <div class="col-12 mt-2"><button class="btn-big btn-off" style="background:#636e72" onclick="sendCmd('fan_exh','0')"><i class="fas fa-wind"></i> Tắt Quạt Hút (Cưỡng bức)</button></div>
             </div>
-            
-            <!-- 2. Quạt Hút -->
-            <div class="device-box">
-                <span class="device-title"><i class="fas fa-wind"></i> QUẠT HÚT</span>
-                <div class="row g-2">
-                    <div class="col-6"><button id="btn-exh-on" class="btn-control" onclick="sendCmd('exh','1')">BẬT</button></div>
-                    <div class="col-6"><button id="btn-exh-off" class="btn-control" onclick="sendCmd('exh','0')">TẮT</button></div>
-                </div>
-            </div>
+        </div>
 
-            <!-- 3. Đèn -->
-            <div class="device-box">
-                <span class="device-title"><i class="fas fa-lightbulb"></i> ĐÈN ĐIỆN</span>
-                <div class="row g-2">
-                    <div class="col-6"><button id="btn-light-on" class="btn-control" onclick="sendCmd('light','1')">BẬT</button></div>
-                    <div class="col-6"><button id="btn-light-off" class="btn-control" onclick="sendCmd('light','0')">TẮT</button></div>
+        <div id="p-TIMER" class="panel">
+            <div class="card border-0 shadow-sm p-3 mb-3">
+                <label class="form-label fw-bold">Thời gian bật (Mỗi ngày)</label>
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-white"><i class="fas fa-clock text-success"></i></span>
+                    <input type="time" id="t-on" class="form-control form-control-lg">
+                </div>
+                <label class="form-label fw-bold">Thời gian tắt</label>
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-white"><i class="fas fa-clock text-danger"></i></span>
+                    <input type="time" id="t-off" class="form-control form-control-lg">
                 </div>
             </div>
+            <button class="btn-big btn-save" onclick="sendTimer()"><i class="fas fa-save"></i> Lưu Cấu Hình</button>
         </div>
     </div>
 </div>
 
 <script>
-    const cfg = { host: "7e225cbc2f0c41febc61a20d1a0c5b3d.s1.eu.hivemq.cloud", port: 8884, user: "ngoctuyka", pass: "Tu12345678@", ssl: true };
+    // --- CẤU HÌNH MQTT (KHỚP VỚI ESP32) ---
+    const cfg = { 
+        host: "7e225cbc2f0c41febc61a20d1a0c5b3d.s1.eu.hivemq.cloud", 
+        port: 8884, // Cổng Secure WebSocket
+        user: "ngoctuyka", 
+        pass: "Tu12345678@", 
+        ssl: true 
+    };
     const pfx = "stem_thpt_physics_project_2025";
+    
+    // Danh sách Topic
     const topics = {
         co2: pfx+"/data/co2", temp: pfx+"/data/temp", hum: pfx+"/data/hum", dust: pfx+"/data/dust", occ: pfx+"/data/occupancy",
-        mode: pfx+"/control/mode", 
-        cmd_ceil: pfx+"/control/fan_ceil", cmd_exh: pfx+"/control/fan_exh", cmd_light: pfx+"/control/light",
-        st_ceil: pfx+"/status/ceil", st_exh: pfx+"/status/exh", st_light: pfx+"/status/light"
+        mode: pfx+"/control/mode", fan_ceil: pfx+"/control/fan_ceil", fan_exh: pfx+"/control/fan_exh", light: pfx+"/control/light", timer: pfx+"/control/timer",
+        st_exh: pfx+"/status/exh", st_ceil: pfx+"/status/ceil", st_light: pfx+"/status/light"
     };
 
-    const client = new Paho.MQTT.Client(cfg.host, cfg.port, "Web-" + parseInt(Math.random()*1000));
+    // Tạo ID ngẫu nhiên để không bị đá văng khi mở nhiều tab
+    const client = new Paho.MQTT.Client(cfg.host, cfg.port, "Web-" + parseInt(Math.random()*10000));
 
+    // --- HÀM XỬ LÝ GIAO DIỆN ---
     function setMode(m, btn) {
         document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
         document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show')); document.getElementById('p-'+m).classList.add('show');
-        sendMQTT(topics.mode, (m==='AUTO')?"1":"0");
-    }
-    
-    function sendCmd(dev, val, mode='manual') { 
-        // Gửi lệnh MQTT
-        if(dev==='ceil') sendMQTT(topics.cmd_ceil, val);
-        if(dev==='exh') sendMQTT(topics.cmd_exh, val);
-        if(dev==='light') sendMQTT(topics.cmd_light, val);
-
-        // Cập nhật giao diện ngay lập tức (Optimistic UI) để người dùng thấy phản hồi
-        updateBtnUI(dev, val, mode);
+        let val = (m==='AUTO')?"1":(m==='TIMER'?"2":"0"); // 1: Auto, 0: Manual
+        sendMQTT(topics.mode, val);
     }
 
-    // Hàm cập nhật màu nút
-    function updateBtnUI(dev, val, mode='manual') {
-        // Xác định ID nút dựa trên thiết bị và chế độ
-        let btnOn, btnOff;
-        if (mode === 'manual') {
-            btnOn = document.getElementById('btn-' + dev + '-on');
-            btnOff = document.getElementById('btn-' + dev + '-off');
-        } else {
-            // Chế độ auto chỉ có nút cho trần và đèn
-            btnOn = document.getElementById('btn-' + dev + '-on-auto');
-            btnOff = document.getElementById('btn-' + dev + '-off-auto');
-        }
+    function sendCmd(dev, val) { 
+        // Gửi lệnh điều khiển
+        sendMQTT(topics[dev], val); 
+    }
 
-        if (!btnOn || !btnOff) return; // Nếu không tìm thấy nút thì bỏ qua
-
-        // Reset class cũ
-        btnOn.className = 'btn-control';
-        btnOff.className = 'btn-control';
-
-        // Add class mới dựa trên giá trị val (1 hoặc 0)
-        if (val === '1') {
-            btnOn.classList.add('active-on');
-        } else {
-            btnOff.classList.add('active-off');
-        }
+    function sendTimer() {
+        let t1=document.getElementById('t-on').value, t2=document.getElementById('t-off').value;
+        if(t1&&t2) { sendMQTT(topics.timer, t1+"|"+t2); alert("Đã gửi lệnh hẹn giờ!"); }
+        else alert("Vui lòng chọn đủ giờ!");
     }
 
     function logout() { sessionStorage.removeItem('isLoggedIn'); window.location.href='login.html'; }
     function sendMQTT(t,m) { if(client.isConnected()) client.send(t,m,0,true); }
 
-    client.onConnectionLost = (e)=>{ console.log("Lost"); document.getElementById('st-co2').innerText="Offline"; };
-    client.onMessageArrived = (m)=>{
-        const t = m.destinationName, p = m.payloadString;
-        if(t===topics.co2) {
-            let v=parseInt(p), c=(v>1000)?(v>2000?"#dc3545":"#ffc107"):"#20c997";
-            document.getElementById('v-co2').innerText=v;
-            document.getElementById('g-co2').style.background=`conic-gradient(${c} ${v/50}%, #eee 0%)`;
-            document.getElementById('st-co2').innerText=(v>1000)?"Cảnh báo":"Tốt";
-            document.getElementById('st-co2').style.color=c;
-        }
-        if(t===topics.temp) document.getElementById('v-temp').innerText=p;
-        if(t===topics.hum) document.getElementById('v-hum').innerText=p;
-        if(t===topics.dust) document.getElementById('v-dust').innerText=p;
-        
-        if(t===topics.occ) {
-            let hasP = (p==="1");
-            let c = document.getElementById('card-occ');
-            if(hasP) { c.className="presence-card has-person"; document.getElementById('txt-occ').innerText="CÓ NGƯỜI"; } 
-            else { c.className="presence-card no-person"; document.getElementById('txt-occ').innerText="VẮNG"; }
-        }
-
-        // Cập nhật trạng thái status và đồng bộ nút bấm từ MQTT
-        if(t===topics.st_ceil) { updateStatus('st-ceil', p); updateBtnUI('ceil', p); updateBtnUI('ceil', p, 'auto'); }
-        if(t===topics.st_exh) { updateStatus('st-exh', p); updateBtnUI('exh', p); }
-        if(t===topics.st_light) { updateStatus('st-light', p); updateBtnUI('light', p); updateBtnUI('light', p, 'auto'); }
+    // --- XỬ LÝ KHI NHẬN DỮ LIỆU ---
+    client.onConnectionLost = (e)=>{ 
+        console.log("Mất kết nối MQTT", e);
+        document.getElementById('connection-status').innerHTML = "<span class='status-dot' style='background:red'></span>Mất kết nối Server";
     };
 
-    function updateStatus(id, val) {
-        let el = document.getElementById(id);
-        if(val==="1") { el.innerText="BẬT"; el.className="status-badge st-on"; }
-        else { el.innerText="TẮT"; el.className="status-badge st-off"; }
-    }
+    client.onMessageArrived = (m)=>{
+        const t = m.destinationName, p = m.payloadString;
+        console.log("Nhan: " + t + " -> " + p);
 
-    client.connect({ onSuccess:()=>{ console.log("Connected"); document.getElementById('st-co2').innerText="Online"; Object.values(topics).forEach(t => client.subscribe(t)); }, useSSL:cfg.ssl, userName:cfg.user, password:cfg.pass });
+        // Hàm cập nhật hiển thị, xử lý lỗi "ERR"
+        const updateVal = (id, val, suffix) => {
+            const el = document.getElementById(id);
+            if(val === "ERR") {
+                el.innerText = "Lỗi"; el.style.color = "red"; el.style.fontSize = "1rem";
+            } else {
+                el.innerText = val + suffix; el.style.color = "#2d3436"; el.style.fontSize = "1.4rem";
+            }
+        };
+
+        if(t===topics.temp) updateVal('v-temp', p, '°C');
+        if(t===topics.hum) updateVal('v-hum', p, '%');
+        if(t===topics.dust) updateVal('v-dust', p, '');
+
+        if(t===topics.co2) {
+            const elVal = document.getElementById('v-co2');
+            const elSt = document.getElementById('st-co2');
+            const elG = document.getElementById('g-co2');
+
+            if (p === "ERR") {
+                elVal.innerText = "Lỗi"; elVal.style.color = "red";
+                elSt.innerText = "Kiểm tra cảm biến"; elSt.className = "fw-bold small badge bg-danger px-3 py-2 rounded-pill";
+                elG.style.background = `conic-gradient(#ccc 100%, #eee 0%)`;
+            } else {
+                let v = parseInt(p);
+                let color = (v>1000)?(v>2000?"#e74c3c":"#f1c40f"):"#00b894"; // Xanh, Vàng, Đỏ
+                let msg = (v>1000)?"Không khí kém":"Không khí tốt";
+                let percent = Math.min((v / 2000) * 100, 100);
+
+                elVal.innerText = v; elVal.style.color = "#333";
+                elSt.innerText = msg; 
+                elSt.className = `fw-bold small badge px-3 py-2 rounded-pill ${v>1000 ? 'bg-warning text-dark' : 'bg-success'}`;
+                elG.style.background = `conic-gradient(${color} ${percent}%, #eee 0%)`;
+            }
+        }
+
+        if(t===topics.occ) {
+            let hasP = (p==="1");
+            let card = document.getElementById('card-occ');
+            let txt = document.getElementById('txt-occ');
+            let desc = document.getElementById('lbl-occ-desc');
+            if(hasP) {
+                card.className = "presence-card is-present pulse";
+                txt.className = "badge bg-success rounded-pill px-3"; txt.innerText = "CÓ NGƯỜI";
+                desc.innerText = "Đang hoạt động";
+            } else {
+                card.className = "presence-card no-present";
+                txt.className = "badge bg-secondary rounded-pill px-3"; txt.innerText = "VẮNG";
+                desc.innerText = "Hệ thống chờ";
+            }
+        }
+
+        // Cập nhật trạng thái thiết bị (Phản hồi thực tế)
+        const updateStatus = (id, val, txtOn, txtOff) => {
+             const el = document.getElementById(id);
+             if(el) {
+                 el.innerText = (val==="1" ? txtOn : txtOff);
+                 el.className = (val==="1" ? "text-success fw-bold" : "text-muted");
+             }
+        };
+        
+        if(t===topics.st_ceil) { updateStatus('st-fan-auto', p, "ĐANG QUAY", "ĐÃ TẮT"); }
+        if(t===topics.st_light) { updateStatus('st-light-auto', p, "ĐANG SÁNG", "ĐÃ TẮT"); }
+    };
+
+    // --- KẾT NỐI ---
+    client.connect({ 
+        onSuccess:()=>{ 
+            console.log("Connected to HiveMQ"); 
+            document.getElementById('connection-status').innerHTML = "<span class='status-dot online'></span>Đã kết nối";
+            Object.values(topics).forEach(t => client.subscribe(t)); 
+        }, 
+        useSSL: cfg.ssl, 
+        userName: cfg.user, 
+        password: cfg.pass,
+        keepAliveInterval: 60
+    });
 </script>
 </body>
 </html>
-
-Cách thức hoạt động của tính năng mới:
- * Phản hồi tức thì: Ngay khi bạn bấm nút "BẬT", nút đó sẽ lập tức chuyển sang màu Xanh Lá, nút "TẮT" sẽ về màu xám nhạt.
- * Đồng bộ 2 chiều: Khi ESP32 gửi tin nhắn xác nhận "Quạt đã bật" về (qua topic .../status/ceil), giao diện sẽ tự động cập nhật lại màu sắc nút bấm một lần nữa. Điều này đảm bảo trạng thái trên Web luôn khớp với thực tế.
- * Đồng bộ Auto/Manual: Nếu bạn bật đèn ở chế độ Auto, khi chuyển sang tab Manual, bạn cũng sẽ thấy nút Bật Đèn đang sáng (và ngược lại).
-Bạn upload file này lên GitHub và reload trang (nhớ xóa cache trình duyệt nếu chưa thấy thay đổi) nhé!
-
