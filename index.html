@@ -33,16 +33,41 @@
         .pulse { animation: pulse-animation 2s infinite; }
         @keyframes pulse-animation { 0% { box-shadow: 0 0 0 0px rgba(25, 135, 84, 0.2); } 100% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); } }
 
-        /* CONTROLS */
+        /* CONTROLS AREA */
         .control-area { padding: 20px; background: white; border-top-left-radius: 30px; border-top-right-radius: 30px; margin-top: 10px; }
         .mode-sw { display: flex; background: #f1f3f5; border-radius: 15px; padding: 5px; margin-bottom: 20px; }
         .mode-btn { flex: 1; border: none; background: none; padding: 10px; border-radius: 12px; font-weight: 600; color: #868e96; }
         .mode-btn.active { background: white; color: #0d6efd; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-        .btn-big { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; margin-bottom: 10px; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-on { background: #ff6b6b; } .btn-off { background: #2d3436; } .btn-save { background: #0984e3; }
-        .btn-light-on { background: #f1c40f; color: #fff; }
-        
+        /* --- BUTTON STYLE MỚI (PHẢN HỒI TRẠNG THÁI) --- */
+        .btn-control {
+            width: 100%; padding: 15px; border-radius: 15px; 
+            border: 2px solid #e9ecef; /* Viền mờ mặc định */
+            font-weight: bold; color: #6c757d; background-color: #f8f9fa;
+            transition: all 0.2s ease-in-out;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-control:active { transform: scale(0.95); }
+
+        /* Trạng thái BẬT (Xanh đậm, Phát sáng) */
+        .btn-control.active-on {
+            background-color: #198754 !important; 
+            color: white !important;
+            border-color: #146c43 !important;
+            box-shadow: 0 4px 15px rgba(25, 135, 84, 0.4);
+            transform: translateY(-2px);
+        }
+        /* Trạng thái TẮT (Đỏ, Phát sáng) */
+        .btn-control.active-off {
+            background-color: #dc3545 !important;
+            color: white !important;
+            border-color: #b02a37 !important;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-save { background: #0984e3; color: white; width: 100%; padding: 15px; border-radius: 15px; border:none; font-weight: bold;}
+
+        /* UTILS */
         .panel { display: none; } .panel.show { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
         .status-dot { height: 10px; width: 10px; background-color: #bbb; border-radius: 50%; display: inline-block; margin-right: 5px; }
@@ -110,43 +135,57 @@
             </div>
             <div class="d-flex gap-2 mt-3">
                 <div class="w-50 bg-light p-3 rounded-4 text-center border">
-                    <small class="text-muted d-block mb-1">TRẠNG THÁI QUẠT</small>
+                    <small class="text-muted d-block mb-1">QUẠT TRẦN</small>
                     <b id="st-fan-auto" class="text-primary">--</b>
                 </div>
                 <div class="w-50 bg-light p-3 rounded-4 text-center border">
-                    <small class="text-muted d-block mb-1">TRẠNG THÁI ĐÈN</small>
+                    <small class="text-muted d-block mb-1">ĐÈN ĐIỆN</small>
                     <b id="st-light-auto" class="text-warning">--</b>
                 </div>
             </div>
         </div>
 
         <div id="p-MANUAL" class="panel">
-            <div class="row g-2">
-                <div class="col-6"><button class="btn-big btn-on" onclick="sendCmd('fan_ceil','1')"><i class="fas fa-fan"></i> Bật Quạt</button></div>
-                <div class="col-6"><button class="btn-big btn-off" onclick="sendCmd('fan_ceil','0')"><i class="fas fa-ban"></i> Tắt Quạt</button></div>
-                <div class="col-6"><button class="btn-big btn-light-on" onclick="sendCmd('light','1')"><i class="fas fa-lightbulb"></i> Bật Đèn</button></div>
-                <div class="col-6"><button class="btn-big btn-off" onclick="sendCmd('light','0')"><i class="fas fa-power-off"></i> Tắt Đèn</button></div>
-                <div class="col-12 mt-2"><button class="btn-big btn-off" style="background:#636e72" onclick="sendCmd('fan_exh','0')"><i class="fas fa-wind"></i> Tắt Quạt Hút</button></div>
+            <div class="device-box mb-3">
+                <div class="row g-2">
+                    <div class="col-6"><button id="btn-ceil-on" class="btn-control" onclick="sendCmd('ceil','1')"><i class="fas fa-fan"></i> Bật Quạt</button></div>
+                    <div class="col-6"><button id="btn-ceil-off" class="btn-control" onclick="sendCmd('ceil','0')"><i class="fas fa-ban"></i> Tắt Quạt</button></div>
+                    
+                    <div class="col-6"><button id="btn-light-on" class="btn-control" onclick="sendCmd('light','1')"><i class="fas fa-lightbulb"></i> Bật Đèn</button></div>
+                    <div class="col-6"><button id="btn-light-off" class="btn-control" onclick="sendCmd('light','0')"><i class="fas fa-power-off"></i> Tắt Đèn</button></div>
+                    
+                    <div class="col-6"><button id="btn-exh-on" class="btn-control" onclick="sendCmd('exh','1')"><i class="fas fa-wind"></i> Bật Hút</button></div>
+                    <div class="col-6"><button id="btn-exh-off" class="btn-control" onclick="sendCmd('exh','0')"><i class="fas fa-times-circle"></i> Tắt Hút</button></div>
+                </div>
             </div>
         </div>
 
         <div id="p-TIMER" class="panel">
-            <div class="input-group mb-3">
-                <span class="input-group-text">Bật</span><input type="time" id="t-on" class="form-control">
-                <span class="input-group-text">Tắt</span><input type="time" id="t-off" class="form-control">
+            <div class="alert alert-info border-0 small">
+                <i class="fas fa-clock"></i> Cài đặt thời gian tự động Bật/Tắt hệ thống.
             </div>
-            <button class="btn-big btn-save" onclick="sendTimer()">Lưu Hẹn Giờ</button>
+            <div class="input-group mb-3">
+                <span class="input-group-text">Bật lúc</span><input type="time" id="t-on" class="form-control">
+            </div>
+            <div class="input-group mb-3">
+                <span class="input-group-text">Tắt lúc</span><input type="time" id="t-off" class="form-control">
+            </div>
+            <button class="btn-save" onclick="sendTimer()"><i class="fas fa-save me-2"></i> Lưu Cài Đặt</button>
         </div>
     </div>
 </div>
 
 <script>
+    // Cấu hình MQTT
     const cfg = { host: "7e225cbc2f0c41febc61a20d1a0c5b3d.s1.eu.hivemq.cloud", port: 8884, user: "ngoctuyka", pass: "Tu12345678@", ssl: true };
     const pfx = "stem_thpt_physics_project_2025";
     const topics = {
         co2: pfx+"/data/co2", temp: pfx+"/data/temp", hum: pfx+"/data/hum", dust: pfx+"/data/dust", occ: pfx+"/data/occupancy",
-        mode: pfx+"/control/mode", fan_ceil: pfx+"/control/fan_ceil", fan_exh: pfx+"/control/fan_exh", light: pfx+"/control/light", timer: pfx+"/control/timer",
-        st_ceil: pfx+"/status/ceil", st_light: pfx+"/status/light"
+        mode: pfx+"/control/mode", timer: pfx+"/control/timer",
+        // Map đúng topic điều khiển
+        cmd_ceil: pfx+"/control/fan_ceil", cmd_exh: pfx+"/control/fan_exh", cmd_light: pfx+"/control/light",
+        // Topic phản hồi trạng thái
+        st_ceil: pfx+"/status/ceil", st_exh: pfx+"/status/exh", st_light: pfx+"/status/light"
     };
 
     const client = new Paho.MQTT.Client(cfg.host, cfg.port, "Web-" + parseInt(Math.random()*10000));
@@ -157,41 +196,77 @@
         let val = (m==='AUTO')?"1":(m==='TIMER'?"2":"0");
         sendMQTT(topics.mode, val);
     }
-    function sendCmd(dev, val) { sendMQTT(topics[dev], val); }
+
+    // HÀM GỬI LỆNH ĐIỀU KHIỂN & CẬP NHẬT UI TỨC THÌ
+    function sendCmd(dev, val) { 
+        // 1. Gửi MQTT
+        let t = "";
+        if(dev === 'ceil') t = topics.cmd_ceil;
+        if(dev === 'exh') t = topics.cmd_exh;
+        if(dev === 'light') t = topics.cmd_light;
+        if(t) sendMQTT(t, val);
+
+        // 2. Cập nhật giao diện ngay lập tức (Giả lập phản hồi)
+        updateBtnUI(dev, val);
+    }
+
+    // HÀM CẬP NHẬT MÀU NÚT BẤM
+    function updateBtnUI(dev, val) {
+        const btnOn = document.getElementById(`btn-${dev}-on`);
+        const btnOff = document.getElementById(`btn-${dev}-off`);
+        
+        if(!btnOn || !btnOff) return;
+
+        // Reset
+        btnOn.className = 'btn-control';
+        btnOff.className = 'btn-control';
+
+        // Active style
+        if(val === '1') btnOn.classList.add('active-on');
+        else btnOff.classList.add('active-off');
+    }
+
     function sendTimer() {
         let t1=document.getElementById('t-on').value, t2=document.getElementById('t-off').value;
-        if(t1&&t2) { sendMQTT(topics.timer, t1+"|"+t2); alert("Đã lưu!"); }
+        if(t1&&t2) { sendMQTT(topics.timer, t1+"|"+t2); alert("Đã lưu hẹn giờ!"); }
+        else alert("Vui lòng chọn đủ giờ Bật và Tắt");
     }
+
     function logout() { sessionStorage.removeItem('isLoggedIn'); window.location.href='login.html'; }
     function sendMQTT(t,m) { if(client.isConnected()) client.send(t,m,0,true); }
 
     client.onConnectionLost = (e)=>{ document.getElementById('connection-status').innerHTML = "<span class='status-dot' style='background:red'></span>Mất kết nối"; };
+    
+    // XỬ LÝ DỮ LIỆU NHẬN ĐƯỢC
     client.onMessageArrived = (m)=>{
         const t = m.destinationName, p = m.payloadString;
-        
         const updateVal = (id, val, suffix) => {
             const el = document.getElementById(id);
             if(val === "ERR") { el.innerText = "Lỗi"; el.style.color = "red"; el.style.fontSize="1rem"; }
             else { el.innerText = val + suffix; el.style.color = "#2d3436"; el.style.fontSize="1.4rem"; }
         };
 
+        // Sensor Updates
         if(t===topics.temp) updateVal('v-temp', p, '°C');
         if(t===topics.hum) updateVal('v-hum', p, '%');
         if(t===topics.dust) updateVal('v-dust', p, '');
         
+        // CO2 Logic
         if(t===topics.co2) {
             if (p === "ERR") {
-                document.getElementById('v-co2').innerText = "Lỗi"; document.getElementById('v-co2').style.color="red";
+                document.getElementById('v-co2').innerText = "Lỗi"; 
                 document.getElementById('st-co2').innerText = "Kiểm tra cảm biến"; document.getElementById('st-co2').className="badge bg-danger rounded-pill";
             } else {
                 let v = parseInt(p);
                 let c = (v>1000)?(v>2000?"#e74c3c":"#f1c40f"):"#2ecc71";
-                document.getElementById('v-co2').innerText = v; document.getElementById('v-co2').style.color="#333";
+                document.getElementById('v-co2').innerText = v; 
                 document.getElementById('g-co2').style.background = `conic-gradient(${c} ${Math.min((v/2000)*100,100)}%, #eee 0%)`;
                 document.getElementById('st-co2').innerText = (v>1000)?"Không khí kém":"Không khí tốt";
                 document.getElementById('st-co2').className = `badge rounded-pill ${v>1000?'bg-warning text-dark':'bg-success'}`;
             }
         }
+        
+        // Presence Logic
         if(t===topics.occ) {
             let hasP = (p==="1");
             let card = document.getElementById('card-occ');
@@ -203,8 +278,20 @@
                 document.getElementById('txt-occ').innerText = "VẮNG"; document.getElementById('txt-occ').className="badge bg-secondary rounded-pill";
             }
         }
-        if(t===topics.st_ceil) document.getElementById('st-fan-auto').innerText = (p==="1"?"ĐANG QUAY":"ĐÃ TẮT");
-        if(t===topics.st_light) document.getElementById('st-light-auto').innerText = (p==="1"?"ĐANG SÁNG":"ĐÃ TẮT");
+
+        // --- STATUS FEEDBACK (QUAN TRỌNG) ---
+        // Cập nhật trạng thái nút bấm khi nhận phản hồi từ Master
+        if(t===topics.st_ceil) { 
+            updateBtnUI('ceil', p); 
+            document.getElementById('st-fan-auto').innerText = (p==="1"?"ĐANG QUAY":"ĐÃ TẮT");
+        }
+        if(t===topics.st_light) { 
+            updateBtnUI('light', p);
+            document.getElementById('st-light-auto').innerText = (p==="1"?"ĐANG SÁNG":"ĐÃ TẮT");
+        }
+        if(t===topics.st_exh) {
+            updateBtnUI('exh', p);
+        }
     };
 
     client.connect({ onSuccess:()=>{ document.getElementById('connection-status').innerHTML = "<span class='status-dot online'></span>Đã kết nối"; Object.values(topics).forEach(t => client.subscribe(t)); }, useSSL:cfg.ssl, userName:cfg.user, password:cfg.pass });
