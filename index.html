@@ -133,14 +133,24 @@
                 <i class="fas fa-robot me-2"></i> <strong>Chế độ thông minh:</strong><br>
                 Hệ thống tự động BẬT khi có người và TẮT sau khi vắng người (60s).
             </div>
-            <div class="d-flex gap-2 mt-3">
-                <div class="w-50 bg-light p-3 rounded-4 text-center border">
-                    <small class="text-muted d-block mb-1">QUẠT TRẦN</small>
-                    <b id="st-fan-auto" class="text-primary">--</b>
+            <div class="row g-2 mt-3">
+                <div class="col-4">
+                    <div class="bg-light p-2 rounded-3 text-center border h-100 d-flex flex-column justify-content-center">
+                        <small class="text-muted d-block mb-1" style="font-size: 0.7rem;">QUẠT TRẦN</small>
+                        <b id="st-fan-auto" class="text-primary" style="font-size: 0.85rem;">--</b>
+                    </div>
                 </div>
-                <div class="w-50 bg-light p-3 rounded-4 text-center border">
-                    <small class="text-muted d-block mb-1">ĐÈN ĐIỆN</small>
-                    <b id="st-light-auto" class="text-warning">--</b>
+                <div class="col-4">
+                    <div class="bg-light p-2 rounded-3 text-center border h-100 d-flex flex-column justify-content-center">
+                        <small class="text-muted d-block mb-1" style="font-size: 0.7rem;">ĐÈN ĐIỆN</small>
+                        <b id="st-light-auto" class="text-warning" style="font-size: 0.85rem;">--</b>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="bg-light p-2 rounded-3 text-center border h-100 d-flex flex-column justify-content-center">
+                        <small class="text-muted d-block mb-1" style="font-size: 0.7rem;">QUẠT HÚT</small>
+                        <b id="st-exh-auto" class="text-success" style="font-size: 0.85rem;">--</b>
+                    </div>
                 </div>
             </div>
         </div>
@@ -291,6 +301,8 @@
         }
         if(t===topics.st_exh) {
             updateBtnUI('exh', p);
+            document.getElementById('st-exh-auto').innerText = (p==="1"?"ĐANG HÚT":"ĐÃ TẮT");
+
         }
     };
 
