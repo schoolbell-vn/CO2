@@ -200,7 +200,10 @@
         // Map đúng topic điều khiển
         cmd_ceil: pfx+"/control/fan_ceil", cmd_exh: pfx+"/control/fan_exh", cmd_light: pfx+"/control/light",
         // Topic phản hồi trạng thái
-        st_ceil: pfx+"/status/ceil", st_exh: pfx+"/status/exh", st_light: pfx+"/status/light"
+        st_ceil: pfx+"/status/ceil", 
+        st_exh: pfx+"/status/exh", 
+        st_light: pfx+"/status/light",
+        slave: pfx+"/status/slave"
     };
 
     const client = new Paho.MQTT.Client(cfg.host, cfg.port, "Web-" + parseInt(Math.random()*10000));
@@ -293,7 +296,20 @@
                 document.getElementById('txt-occ').innerText = "VẮNG"; document.getElementById('txt-occ').className="badge bg-secondary rounded-pill";
             }
         }
-
+            if(t === topics.slave) {
+            const el = document.getElementById('st-slave'); // Lấy thẻ span mà bạn đã thêm ở phần HTML
+            if(el) { // Kiểm tra chắc chắn thẻ có tồn tại để tránh lỗi
+                if(p === "1") {
+                    // Nếu nhận được "1": Màu xanh, hiện chữ Tốt
+                    el.className = "badge bg-primary rounded-pill mt-2"; 
+                    el.innerHTML = '<i class="fas fa-check-circle me-1"></i> Vệ tinh: Tốt';
+                } else {
+                    // Nếu nhận được "0": Màu đỏ, hiện chữ Mất KN
+                    el.className = "badge bg-danger rounded-pill mt-2"; 
+                    el.innerHTML = '<i class="fas fa-times-circle me-1"></i> Vệ tinh: Mất KN';
+                }
+            }
+        }
         // --- STATUS FEEDBACK (QUAN TRỌNG) ---
         // Cập nhật trạng thái nút bấm khi nhận phản hồi từ Master
         if(t===topics.st_ceil) { 
