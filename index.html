@@ -96,47 +96,74 @@
     </div>
     <button onclick="logout()" class="btn btn-sm btn-light text-primary rounded-circle"><i class="fas fa-sign-out-alt"></i></button>
 </div>
-    <div style="padding: 0 15px; margin-top: -25px;">
+    <div style="padding: 0 15px; margin-top: -30px; position: relative; z-index: 10;">
     
-    <ul class="nav nav-pills nav-fill" id="chartTabs" role="tablist" style="background: rgba(255,255,255,0.9); padding: 5px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+    <ul class="nav nav-pills nav-fill gap-2" id="chartTabs" role="tablist" style="margin-bottom: 15px;">
+        
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-co2-btn" data-bs-toggle="pill" data-bs-target="#tab-co2" type="button">CO2</button>
+            <button class="nav-link active shadow-sm" id="tab-co2-btn" data-bs-toggle="pill" data-bs-target="#tab-co2" type="button"
+                style="background: white; color: #dc3545; border-radius: 12px; padding: 8px 2px;">
+                <i class="fas fa-cloud fa-lg mb-1"></i><br>
+                <span style="font-size: 0.8rem;">CO2</span>
+            </button>
         </li>
+
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-temp-btn" data-bs-toggle="pill" data-bs-target="#tab-temp" type="button">Nhiệt</button>
+            <button class="nav-link shadow-sm" id="tab-temp-btn" data-bs-toggle="pill" data-bs-target="#tab-temp" type="button"
+                style="background: white; color: #fd7e14; border-radius: 12px; padding: 8px 2px;">
+                <i class="fas fa-temperature-high fa-lg mb-1"></i><br>
+                <span style="font-size: 0.8rem;">Nhiệt</span>
+            </button>
         </li>
+
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-hum-btn" data-bs-toggle="pill" data-bs-target="#tab-hum" type="button">Ẩm</button>
+            <button class="nav-link shadow-sm" id="tab-hum-btn" data-bs-toggle="pill" data-bs-target="#tab-hum" type="button"
+                style="background: white; color: #0d6efd; border-radius: 12px; padding: 8px 2px;">
+                <i class="fas fa-tint fa-lg mb-1"></i><br>
+                <span style="font-size: 0.8rem;">Ẩm</span>
+            </button>
         </li>
+
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-dust-btn" data-bs-toggle="pill" data-bs-target="#tab-dust" type="button">Bụi</button>
+            <button class="nav-link shadow-sm" id="tab-dust-btn" data-bs-toggle="pill" data-bs-target="#tab-dust" type="button"
+                style="background: white; color: #6c757d; border-radius: 12px; padding: 8px 2px;">
+                <i class="fas fa-smog fa-lg mb-1"></i><br>
+                <span style="font-size: 0.8rem;">Bụi</span>
+            </button>
         </li>
     </ul>
 
-    <div class="tab-content" id="chartTabContent">
+    <div class="tab-content p-2 bg-white shadow-sm" style="border-radius: 15px; min-height: 260px;">
         
         <div class="tab-pane fade show active" id="tab-co2" role="tabpanel">
             <iframe width="100%" height="250" style="border:0;" 
-                src="https://thingspeak.com/channels/3220873/charts/1?bgcolor=%23ffffff&color=%23e74c3c&dynamic=true&results=30&type=line&title=Nồng độ CO2"></iframe>
+                src="https://thingspeak.com/channels/3220873/charts/1?api_key=V2N5UQ52GZ3HC1SH&bgcolor=%23ffffff&color=%23dc3545&dynamic=true&results=30&type=line&title="></iframe>
         </div>
 
         <div class="tab-pane fade" id="tab-temp" role="tabpanel">
             <iframe width="100%" height="250" style="border:0;" 
-                src="https://thingspeak.com/channels/3220873L_ID/charts/2?bgcolor=%23ffffff&color=%23d35400&dynamic=true&results=30&type=line&title=Nhiệt độ"></iframe>
+                src="https://thingspeak.com/channels/3220873/charts/2?api_key=V2N5UQ52GZ3HC1SH&bgcolor=%23ffffff&color=%23fd7e14&dynamic=true&results=30&type=line&title="></iframe>
         </div>
 
         <div class="tab-pane fade" id="tab-hum" role="tabpanel">
             <iframe width="100%" height="250" style="border:0;" 
-                src="https://thingspeak.com/channels/3220873L_ID/charts/3?bgcolor=%23ffffff&color=%233498db&dynamic=true&results=30&type=line&title=Độ ẩm"></iframe>
+                src="https://thingspeak.com/channels/3220873/charts/3?api_key=V2N5UQ52GZ3HC1SH&bgcolor=%23ffffff&color=%230d6efd&dynamic=true&results=30&type=line&title="></iframe>
         </div>
 
         <div class="tab-pane fade" id="tab-dust" role="tabpanel">
             <iframe width="100%" height="250" style="border:0;" 
-                src="https://thingspeak.com/channels/3220873/charts/4?bgcolor=%23ffffff&color=%237f8c8d&dynamic=true&results=30&type=line&title=Bụi mịn"></iframe>
+                src="https://thingspeak.com/channels/3220873/charts/4?api_key=V2N5UQ52GZ3HC1SH&bgcolor=%23ffffff&color=%236c757d&dynamic=true&results=30&type=line&title="></iframe>
         </div>
 
     </div>
 </div>
+<style>
+    .nav-pills .nav-link.active {
+        background-color: #0d6efd !important; /* Màu nền khi chọn */
+        color: white !important; /* Chữ màu trắng khi chọn */
+        font-weight: bold;
+    }
+</style>
     <div class="gauge-card">
         <div class="co2-circle" id="g-co2">
             <div class="co2-inner">
